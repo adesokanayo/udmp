@@ -2,7 +2,7 @@
 
 **An open bundle format and adapter contract for taking your data out of any SaaS, relationships and attachments intact, and putting it into any other.**
 
-Code is a commodity now. The last moat a SaaS vendor has is the pain of leaving: flat CSV exports that drop every relationship, rate-limited or paywalled APIs, attachment links that expire tomorrow, rich text in a format nobody else reads. UDMP removes that moat.
+You should be free to take your data out of any SaaS system. Today that is very hard to do: flat CSV exports that drop every relationship, rate-limited or paywalled APIs, attachment links that expire tomorrow, rich text in a format nobody else reads. UDMP is a common format and a set of tools that make it possible.
 
 - **Spec:** [spec/SPEC.md](spec/SPEC.md) — the normative format, 15 sections.
 - **Vocabulary:** [spec/VOCABULARY.md](spec/VOCABULARY.md) — semantic tags so an importer that has never seen HubSpot knows a `company` is a `crm.account`.

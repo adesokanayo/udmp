@@ -24,7 +24,7 @@ The key words MUST, MUST NOT, REQUIRED, SHALL, SHOULD, SHOULD NOT, RECOMMENDED, 
 
 ## 1. Motivation
 
-Code is cheap to reproduce. The durable advantage a SaaS vendor holds is the cost its customers would bear to leave. That cost is manufactured through flat CSV exports that drop relationships, rate-limited or paywalled APIs, expiring attachment URLs, and proprietary rich-text encodings.
+A customer's operational data belongs to the customer, and they should be free to take it out of any SaaS system. In practice that is very hard: exports are flat CSV files that drop relationships, APIs are rate-limited or paywalled, attachment URLs expire, and rich text is stored in proprietary encodings. Each migration becomes a bespoke project.
 
 Regulation is catching up. Chapter VI of the EU Data Act has applied to data processing services, SaaS included, since 12 September 2025, and from 12 January 2027 switching charges, including egress charges tied to switching, are banned outright. The law mandates the outcome (portability) but not the format. UDMP is a candidate for that format.
 
