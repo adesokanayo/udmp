@@ -87,7 +87,8 @@ Adapters use only the documented, customer-facing API with your own credentials.
 
 | Package | What |
 |---|---|
-| `@udmp/core` | Types, manifest validation, streaming bundle reader/writer, integrity checker, export runner, SQLite importer, rich-text normalizers, Exit Score. |
+| `@udmp/core` | Types, manifest validation, streaming bundle reader/writer, integrity checker, export runner, importer contract (`plan`/`apply`, id-map rewriting), SQLite importer, rich-text normalizers, Exit Score. |
+| `@udmp/adapter-twenty` | Importer for Twenty CRM: `crm.account`→companies, `crm.contact`→people, `crm.deal`→opportunities, junctions→link objects, unmapped fields→custom fields or notes. Idempotent per `bundle_id`. |
 | `udmp` | CLI: `validate`, `inspect`, `export`, `to-sqlite`, `score`. |
 | `@udmp/adapter-linear` | Linear exporter (GraphQL). Static schema, Markdown-native. |
 | `@udmp/adapter-hubspot` | HubSpot CRM exporter. Dynamic schema: discovers custom properties, enums, association labels per tenant. |
@@ -109,7 +110,7 @@ Neutral home, no vendor ownership, adversarial to lock-in but never to a vendor'
 
 ## Roadmap to 1.0.0
 
-- [ ] Reference **importer** for a challenger (Attio or Twenty) to prove the M side.
+- [x] Reference **importer** for a challenger: `@udmp/adapter-twenty` imports any CRM bundle into [Twenty](https://twenty.com) by semantic tag (`udmp import --importer twenty --plan|--apply`).
 - [ ] OpenAPI-to-adapter scaffolder so a new SaaS adapter is an afternoon's work.
 - [ ] Parquet chunk format (reserved in 1.0, lands in 1.1).
 - [ ] Jira, Zendesk, Shopify, Pipedrive, Intercom adapters, with scorecards.

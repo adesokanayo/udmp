@@ -1,7 +1,7 @@
 {
   "name": "udmp",
   "version": "1.0.0-rc.1",
-  "description": "The UDMP command line: validate, inspect, export, and turn SaaS data into SQLite.",
+  "description": "The UDMP command line: validate, inspect, export, import, and turn SaaS data into SQLite.",
   "license": "Apache-2.0",
   "type": "module",
   "bin": { "udmp": "./dist/bin.js" },
@@ -16,6 +16,7 @@
   },
   "optionalDependencies": {
     "@udmp/adapter-linear": "workspace:*",
-    "@udmp/adapter-hubspot": "workspace:*"
+    "@udmp/adapter-hubspot": "workspace:*",
+    "@udmp/adapter-twenty": "workspace:*"
   }
 }

@@ -33,6 +33,12 @@ importers:
         specifier: workspace:*
         version: link:../core
 
+  packages/adapter-twenty:
+    dependencies:
+      '@udmp/core':
+        specifier: workspace:*
+        version: link:../core
+
   packages/cli:
     dependencies:
       '@udmp/core':
@@ -45,6 +51,9 @@ importers:
       '@udmp/adapter-linear':
         specifier: workspace:*
         version: link:../adapter-linear
+      '@udmp/adapter-twenty':
+        specifier: workspace:*
+        version: link:../adapter-twenty
 
   packages/core:
     dependencies:

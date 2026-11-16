@@ -1,9 +1,9 @@
 import { parseArgs } from "node:util";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
-  validateBundle, BundleReader, importToSqlite, runExport, computeScore,
-  type Adapter, type Scorecard,
+  validateBundle, BundleReader, importToSqlite, runExport, computeScore, formatPlan,
+  type Adapter, type Importer, type MappingPlan, type Scorecard,
 } from "@udmp/core";
 
 const USAGE = `udmp — Universal Data Migration Protocol
@@ -14,12 +14,16 @@ Usage:
   udmp export   --adapter <name> --out <dir> [--objects a,b] [--gzip] [--since <iso>] [--config k=v ...]
                                                          Export a SaaS tenant into a bundle
   udmp to-sqlite <bundle> <file.sqlite> [--prefix p]     Load a bundle into a queryable SQLite database
+  udmp import   <bundle> --importer <name> --plan [--json] [--plan-file out.json]
+                                                         Propose a mapping into a target SaaS and exit
+  udmp import   <bundle> --importer <name> --apply [--plan-file plan.json] [--no-custom-fields] [--id-map out.json]
+                                                         Write the bundle into the target (idempotent per bundle_id)
   udmp score    <scorecard.json>                         Compute a SaaS Exit Score from a scorecard
   udmp adapters                                          List adapters installed next to the CLI
 
 Adapter config is read from --config key=value flags and from environment
-variables named UDMP_<ADAPTER>_<KEY> (e.g. UDMP_LINEAR_API_KEY). Credentials
-never end up in the bundle.
+variables named UDMP_<ADAPTER>_<KEY> (e.g. UDMP_LINEAR_API_KEY, UDMP_TWENTY_API_KEY).
+Credentials never end up in the bundle.
 `;
 
 export async function main(argv: string[], io = { out: console.log, err: console.error }): Promise<number> {
@@ -29,6 +33,7 @@ export async function main(argv: string[], io = { out: console.log, err: console
     case "inspect": return inspect(rest, io);
     case "export": return exportCmd(rest, io);
     case "to-sqlite": return toSqlite(rest, io);
+    case "import": return importCmd(rest, io);
     case "score": return score(rest, io);
     case "adapters": return adapters(io);
     case "-h": case "--help": case "help": case undefined: io.out(USAGE); return cmd ? 0 : 1;
@@ -90,6 +95,19 @@ export async function loadAdapter(name: string): Promise<Adapter> {
   throw new Error(`adapter "${name}" not found (tried ${candidates.join(", ")}): ${(lastErr as Error)?.message ?? ""}`);
 }
 
+export async function loadImporter(name: string): Promise<Importer> {
+  const candidates = name.includes("/") || name.startsWith(".") ? [name] : [`@udmp/adapter-${name}`, `udmp-adapter-${name}`, name];
+  let lastErr: unknown;
+  for (const c of candidates) {
+    try {
+      const mod = await import(c);
+      const a = mod.importer ?? mod.default;
+      if (a && typeof a.plan === "function" && typeof a.apply === "function") return a as Importer;
+    } catch (e) { lastErr = e; }
+  }
+  throw new Error(`importer "${name}" not found (tried ${candidates.join(", ")}): ${(lastErr as Error)?.message ?? ""}`);
+}
+
 function collectConfig(adapterName: string, flags: string[]): Record<string, string> {
   const cfg: Record<string, string> = {};
   const prefix = `UDMP_${adapterName.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_`;
@@ -127,6 +145,45 @@ async function exportCmd(args: string[], io: IO): Promise<number> {
   return 0;
 }
 
+async function importCmd(args: string[], io: IO): Promise<number> {
+  const { values, positionals } = parseArgs({
+    args, allowPositionals: true, options: {
+      importer: { type: "string" }, plan: { type: "boolean", default: false }, apply: { type: "boolean", default: false },
+      json: { type: "boolean", default: false }, "plan-file": { type: "string" }, "id-map": { type: "string" },
+      "custom-fields": { type: "boolean", default: true }, config: { type: "string", multiple: true, default: [] }, quiet: { type: "boolean", default: false },
+    },
+  });
+  const dir = positionals[0];
+  if (!dir || !values.importer) { io.err("import: <bundle> and --importer are required"); return 1; }
+  if (values.plan === values.apply) { io.err("import: pass exactly one of --plan or --apply"); return 1; }
+  const bundle = new BundleReader(resolve(dir));
+  if (bundle.issues.some((i) => i.level === "error")) { io.err("import: bundle manifest has errors; run `udmp validate` first"); return 1; }
+  const importer = await loadImporter(values.importer);
+  const config = collectConfig(importer.platform, values.config ?? []);
+  const ac = new AbortController();
+  process.once("SIGINT", () => { io.err("\naborting..."); ac.abort(); });
+  const ctx = { log: values.quiet ? () => {} : (m: string) => io.err(m), signal: ac.signal };
+
+  let plan: MappingPlan;
+  if (values.apply && values["plan-file"]) plan = JSON.parse(readFileSync(resolve(values["plan-file"]), "utf8")) as MappingPlan;
+  else plan = await importer.plan(config, bundle.manifest, ctx);
+  if (!values["custom-fields"]) plan.options.create_custom_fields = false;
+
+  if (values.plan) {
+    if (values["plan-file"]) writeFileSync(resolve(values["plan-file"]), JSON.stringify(plan, null, 2) + "\n");
+    io.out(values.json ? JSON.stringify(plan, null, 2) : formatPlan(plan));
+    if (values["plan-file"]) io.err(`plan written to ${values["plan-file"]}; edit it, then: udmp import ${dir} --importer ${values.importer} --apply --plan-file ${values["plan-file"]}`);
+    return 0;
+  }
+  const res = await importer.apply(config, bundle, plan, ctx);
+  if (values["id-map"]) writeFileSync(resolve(values["id-map"]), JSON.stringify(res.id_map, null, 2) + "\n");
+  const sum = (r: Record<string, number>) => Object.values(r).reduce((a, b) => a + b, 0);
+  io.out(`imported bundle ${bundle.manifest.bundle_id} into ${importer.displayName}: ${sum(res.created)} created, ${sum(res.matched)} already present, ${sum(res.skipped)} skipped, ${res.custom_fields_created.length} custom fields/objects created, ${res.notes_created} notes`);
+  for (const o of plan.order) if (res.created[o] || res.matched[o] || res.skipped[o]) io.out(`  ${o.padEnd(24)} created ${String(res.created[o] ?? 0).padStart(6)}  matched ${String(res.matched[o] ?? 0).padStart(6)}  skipped ${String(res.skipped[o] ?? 0).padStart(6)}`);
+  if (values["id-map"]) io.out(`id map → ${values["id-map"]}`);
+  return 0;
+}
+
 async function toSqlite(args: string[], io: IO): Promise<number> {
   const { values, positionals } = parseArgs({ args, allowPositionals: true, options: { prefix: { type: "string", default: "" }, quiet: { type: "boolean", default: false } } });
   const [dir, db] = positionals;
@@ -152,7 +209,11 @@ async function score(args: string[], io: IO): Promise<number> {
 async function adapters(io: IO): Promise<number> {
   const known = ["linear", "hubspot"];
   for (const k of known) {
-    try { const a = await loadAdapter(k); io.out(`${a.platform.padEnd(12)} ${a.displayName} v${a.version}`); }
+    try { const a = await loadAdapter(k); io.out(`${a.platform.padEnd(12)} ${a.displayName} v${a.version}  (exporter)`); }
+    catch { io.out(`${k.padEnd(12)} (not installed)`); }
+  }
+  for (const k of ["twenty"]) {
+    try { const a = await loadImporter(k); io.out(`${a.platform.padEnd(12)} ${a.displayName} v${a.version}  (importer)`); }
     catch { io.out(`${k.padEnd(12)} (not installed)`); }
   }
   return 0;

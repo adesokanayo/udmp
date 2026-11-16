@@ -7,3 +7,4 @@ export * from "./adapter.js";
 export * from "./sqlite.js";
 export * from "./richtext.js";
 export * from "./score.js";
+export * from "./importer.js";

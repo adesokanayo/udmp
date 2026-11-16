@@ -65,3 +65,32 @@ Record a tiny tenant as fixtures and stub `globalThis.fetch` (see `packages/adap
 - Default export is the adapter.
 - Add `scorecards/<platform>.json` with evidence links.
 - Open a PR to list it in the registry.
+
+## 6. Writing an importer (spec §11.2)
+
+An importer is the other half of N+M: it reads a bundle it has never seen and lands it in a target, using `semantic` tags rather than vendor knowledge. `@udmp/adapter-twenty` is the reference.
+
+```ts
+import type { Importer } from "@udmp/core";
+
+export const importer: Importer<MyConfig> = {
+  platform: "myapp", displayName: "MyApp", version: "1.0.0",
+  async connect(config) { /* validate credentials, describe the tenant */ },
+  async plan(config, manifest, ctx) { /* read target metadata, propose a MappingPlan, write nothing */ },
+  async apply(config, bundle, plan, ctx) { /* write in plan.order, return { id_map, created, matched, ... } */ },
+};
+export default importer;
+```
+
+Run it with `udmp import <bundle> --importer myapp --plan` (prints the plan and exits) and `--apply`.
+
+**The plan.** Match objects by their `semantic` tag first (`crm.account` → your "company"), then by name. Do the same per field. Every field that lands nowhere MUST still appear in the plan with a `disposition`: `custom_field` (create it on the target when `options.create_custom_fields` is true), `json_note` (keep the value in an attached note or JSON column), or `skip` with a reason. `formatPlan()` renders it; `--plan-file` lets an operator edit the JSON before `--apply`.
+
+**Apply.**
+- Walk `plan.order`, which is `BundleReader.topologicalOrder()`: referenced objects first, junction objects last.
+- Rewrite references with `rewriteReferences(obj, record, id_map)` before writing; it returns dangling references so you can surface them instead of dropping them.
+- Many-to-many junctions become whatever the target has: a native link, a custom link object, or a note. Say which in the plan.
+- Lookup-only objects (`identity.user` → workspace members) resolve into the id map by email and are never created.
+- Be idempotent: write `<platform>:<object>:<source_id>` into an external-id field on every target record and read it back before creating. A second `apply` of the same bundle MUST create nothing. Soft-deleted source records (`soft_delete_field`) SHOULD be soft-deleted on the target, not skipped.
+
+**Tests.** Stub `globalThis.fetch` with an in-memory tenant (`packages/adapter-twenty/test/fake-twenty.ts`), import `examples/hubspot-sample`, and assert the id map, the junction links, and that a second apply makes no write calls.

@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UDMP — The Data Freedom Manifesto</title>
+<meta name="description" content="You should be free to take your data out of any SaaS system. UDMP is the open protocol that makes it possible.">
+<meta property="og:title" content="UDMP — Universal Data Migration Protocol">
+<meta property="og:description" content="You should be free to take your data out of any SaaS system. Today that is very hard. UDMP is an open format and a set of tools that make it possible.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%230b0f14'/><path d='M28 30v24a22 22 0 0 0 44 0V30' fill='none' stroke='%23ffd166' stroke-width='10' stroke-linecap='round'/></svg>">
+<style>
+  :root {
+    --bg: #fbfaf7; --ink: #15171a; --muted: #5d6470; --line: #e6e2d9;
+    --accent: #c8102e; --accent-ink: #ffffff; --card: #ffffff; --code: #f1efe9;
+    --maxw: 760px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0b0f14; --ink: #ebe9e4; --muted: #9aa3ad; --line: #222a33;
+      --accent: #ffd166; --accent-ink: #0b0f14; --card: #121820; --code: #161d26;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0b0f14; --ink: #ebe9e4; --muted: #9aa3ad; --line: #222a33;
+    --accent: #ffd166; --accent-ink: #0b0f14; --card: #121820; --code: #161d26;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 18px/1.6 Georgia, "Iowan Old Style", "Times New Roman", serif; }
+  a { color: inherit; text-decoration-color: var(--accent); text-decoration-thickness: 2px; text-underline-offset: 3px; }
+  header, main, footer { max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; font-size: 15px; }
+  nav .brand { font-weight: 700; letter-spacing: .04em; text-decoration: none; }
+  nav .links a { margin-left: 18px; text-decoration: none; color: var(--muted); }
+  nav .links a:hover { color: var(--ink); }
+  .hero { padding: 48px 0 32px; border-bottom: 1px solid var(--line); }
+  .hero h1 { font-size: clamp(38px, 7vw, 64px); line-height: 1.05; margin: 0 0 20px; letter-spacing: -.02em; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero p.lede { font-size: clamp(19px, 2.6vw, 23px); color: var(--muted); margin: 0 0 28px; }
+  .cta { display: inline-block; background: var(--accent); color: var(--accent-ink); padding: 12px 20px; border-radius: 8px; text-decoration: none; font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 600; font-size: 16px; }
+  .cta.secondary { background: transparent; color: var(--ink); border: 1px solid var(--line); margin-left: 8px; }
+  section { padding: 40px 0; border-bottom: 1px solid var(--line); }
+  h2 { font-size: 28px; margin: 0 0 16px; letter-spacing: -.01em; }
+  h3 { font-size: 20px; margin: 28px 0 8px; }
+  p { margin: 0 0 16px; }
+  ol.articles { counter-reset: a; list-style: none; padding: 0; margin: 0; }
+  ol.articles li { counter-increment: a; padding: 18px 0 18px 64px; position: relative; border-top: 1px solid var(--line); }
+  ol.articles li::before { content: counter(a, upper-roman); position: absolute; left: 0; top: 18px; font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; color: var(--accent); font-size: 18px; }
+  ol.articles strong { display: block; font-size: 20px; margin-bottom: 4px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-top: 8px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 15px; }
+  .card b { display: block; font-size: 16px; margin-bottom: 4px; }
+  pre { background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; background: var(--code); padding: 1px 5px; border-radius: 4px; }
+  pre code { background: none; padding: 0; }
+  table { width: 100%; border-collapse: collapse; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .score { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .diagram { display: block; width: 100%; height: auto; margin: 12px 0 4px; }
+  .diagram text { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; fill: var(--ink); }
+  .diagram .box { fill: var(--card); stroke: var(--line); }
+  .diagram .hub { fill: var(--accent); stroke: none; }
+  .diagram .hub + text { fill: var(--accent-ink); font-weight: 700; }
+  .diagram line { stroke: var(--muted); stroke-width: 1.5; }
+  footer { padding: 32px 16px 56px; color: var(--muted); font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px; }
+  .sign { margin-top: 24px; font-style: italic; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <nav>
+    <a class="brand" href="#">UDMP</a>
+    <span class="links">
+      <a href="#manifesto">Manifesto</a>
+      <a href="#how">How it works</a>
+      <a href="#score">Exit Score</a>
+      <a href="https://github.com/adesokanayo/udmp">GitHub</a>
+    </span>
+  </nav>
+  <div class="hero">
+    <h1>You should be free to take your data <em>out</em> of any SaaS system.</h1>
+    <p class="lede">Today that is very hard to do. UDMP, the Universal Data Migration Protocol, is an open format and a set of tools that make it possible: relationships intact, attachments included, no vendor permission required.</p>
+    <a class="cta" href="https://github.com/adesokanayo/udmp">Read the spec on GitHub</a>
+    <a class="cta secondary" href="#manifesto">Read the manifesto</a>
+  </div>
+</header>
+
+<main>
+  <section id="manifesto">
+    <h2>The Data Freedom Manifesto</h2>
+    <p>Every business runs on software it rents. The customers, the deals, the tickets, the issues, the orders, the years of notes and files: all of it sits inside someone else's product. Getting it in is effortless. Getting it out is a project nobody budgets for.</p>
+    <p>The export button gives you a CSV with the relationships stripped out. The API is rate-limited, paywalled on your plan, or both. Attachments come as links that expire. Rich text comes in a format only the vendor reads. None of this is an accident, and none of it is necessary.</p>
+    <p>We believe:</p>
+    <ol class="articles">
+      <li><strong>Your data is yours.</strong> Not a copy of it, not a flattened summary of it. The whole graph, with every link between records, in a form you can use without the product that held it.</li>
+      <li><strong>Leaving should be a weekend, not a quarter.</strong> A complete, faithful export of a mid-size tenant should take hours, run unattended, and need no support ticket.</li>
+      <li><strong>Portability needs a format, not a promise.</strong> Regulation can require exports to be "structured and machine-readable". Only a shared, open specification makes that testable.</li>
+      <li><strong>Nobody should wait for vendor cooperation.</strong> The APIs customers already pay for are enough. Adapters are built by the people who need them, using only documented access, and they work today.</li>
+      <li><strong>Switching costs should be visible.</strong> If a vendor makes leaving hard, that should be measured, published and comparable, so buyers can see it before they sign.</li>
+      <li><strong>Openness should be rewarded.</strong> A vendor that ships a first-party exporter or importer earns the badge and the goodwill. This is not a war on vendors. It is a standard they can adopt.</li>
+    </ol>
+    <p class="sign">Initiated by <a href="https://github.com/adesokanayo">Ayo Adesokan</a>, November 2026. Add your name by opening a pull request.</p>
+  </section>
+
+  <section id="how">
+    <h2>How it works</h2>
+    <p>UDMP has two halves: a <strong>bundle format</strong> that describes itself completely, and an <strong>adapter contract</strong> so that any exporter can feed any importer. N sources plus M targets, instead of N × M bespoke migrations.</p>
+    <svg class="diagram" viewBox="0 0 720 220" role="img" aria-label="Many SaaS sources export to one UDMP bundle, which imports into many targets">
+      <g>
+        <rect class="box" x="10" y="20" width="130" height="34" rx="6"/><text x="75" y="42" text-anchor="middle">HubSpot</text>
+        <rect class="box" x="10" y="64" width="130" height="34" rx="6"/><text x="75" y="86" text-anchor="middle">Jira</text>
+        <rect class="box" x="10" y="108" width="130" height="34" rx="6"/><text x="75" y="130" text-anchor="middle">Zendesk</text>
+        <rect class="box" x="10" y="152" width="130" height="34" rx="6"/><text x="75" y="174" text-anchor="middle">Shopify</text>
+      </g>
+      <line x1="140" y1="37" x2="290" y2="103"/><line x1="140" y1="81" x2="290" y2="103"/><line x1="140" y1="125" x2="290" y2="103"/><line x1="140" y1="169" x2="290" y2="103"/>
+      <rect class="hub" x="290" y="78" width="140" height="50" rx="8"/><text x="360" y="108" text-anchor="middle">UDMP bundle</text>
+      <line x1="430" y1="103" x2="580" y2="37"/><line x1="430" y1="103" x2="580" y2="81"/><line x1="430" y1="103" x2="580" y2="125"/><line x1="430" y1="103" x2="580" y2="169"/>
+      <g>
+        <rect class="box" x="580" y="20" width="130" height="34" rx="6"/><text x="645" y="42" text-anchor="middle">Twenty CRM</text>
+        <rect class="box" x="580" y="64" width="130" height="34" rx="6"/><text x="645" y="86" text-anchor="middle">Linear</text>
+        <rect class="box" x="580" y="108" width="130" height="34" rx="6"/><text x="645" y="130" text-anchor="middle">Your Postgres</text>
+        <rect class="box" x="580" y="152" width="130" height="34" rx="6"/><text x="645" y="174" text-anchor="middle">SQLite on a laptop</text>
+      </g>
+      <text x="75" y="210" text-anchor="middle" fill="var(--muted)">N exporters</text>
+      <text x="645" y="210" text-anchor="middle" fill="var(--muted)">M importers</text>
+    </svg>
+
+    <h3>A bundle</h3>
+<pre><code>export_bundle/
+├── udmp-manifest.json     schema, relationships, file index, provenance, checksums
+├── data/
+│   ├── account/00001.ndjson
+│   ├── contact/00001.ndjson
+│   └── deal_contact/00001.ndjson    junction object for many-to-many
+├── blobs/
+│   └── sha256-a8d5d8…f8.pdf         content-addressed attachments
+└── meta/dropped.ndjson              anything that could not be carried</code></pre>
+    <div class="grid">
+      <div class="card"><b>Self-describing</b>Every object declares its primary key, every field its type, every relationship its cardinality. Custom fields are first-class.</div>
+      <div class="card"><b>Relational</b>Foreign keys are typed references. A validator proves there are no dangling links before you import.</div>
+      <div class="card"><b>Streamable</b>Newline-delimited JSON in chunks. Gigabytes export and import with constant memory.</div>
+      <div class="card"><b>Hydrated</b>Attachments are downloaded into the bundle and stored by hash. Rich text becomes Markdown with the original preserved.</div>
+      <div class="card"><b>Semantic</b>Objects carry tags like <code>crm.contact</code> or <code>work.issue</code>, so an importer that has never seen the source still knows what it is looking at.</div>
+      <div class="card"><b>Verifiable</b>Three conformance levels: Schema, Relational, Hydrated. <code>udmp validate</code> reports the one you actually have.</div>
+    </div>
+
+    <h3>Try it</h3>
+<pre><code>git clone https://github.com/adesokanayo/udmp && cd udmp
+pnpm install && pnpm build
+
+node packages/cli/dist/bin.js validate examples/hubspot-sample
+node packages/cli/dist/bin.js to-sqlite examples/hubspot-sample crm.sqlite
+
+UDMP_LINEAR_API_KEY=lin_api_… node packages/cli/dist/bin.js export --adapter linear --out ./backup</code></pre>
+    <p>Run that export weekly into SQLite and you own a queryable copy of your own data before you ever need to switch.</p>
+  </section>
+
+  <section id="score">
+    <h2>The SaaS Exit Score</h2>
+    <p>A public, reproducible 100-point index of how hard each vendor makes it to leave: API access, schema introspection, relational integrity, export throughput, and attachment portability, 20 points each. Every score cites public evidence, and vendors can dispute by pull request.</p>
+    <table>
+      <thead><tr><th>Vendor</th><th>Plan</th><th>Score</th><th>Grade</th><th>What holds it back</th></tr></thead>
+      <tbody>
+        <tr><td>Linear</td><td>Standard</td><td class="score">85</td><td>B</td><td>Relationships implicit in the graph rather than declared; uploads need refreshed auth.</td></tr>
+        <tr><td>HubSpot</td><td>Professional</td><td class="score">75</td><td>B</td><td>Associations only in batches of 100; bulk export is flat CSV; file URLs expire.</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:14px"><a href="https://github.com/adesokanayo/udmp/tree/main/scorecards">Add a vendor</a> by submitting a scorecard with evidence links.</p>
+  </section>
+
+  <section id="join">
+    <h2>Join</h2>
+    <div class="grid">
+      <div class="card"><b>Write an adapter</b>An exporter is a few hundred lines against the API you already use. The runner handles chunking, checksums, blobs and the manifest. <a href="https://github.com/adesokanayo/udmp/blob/main/spec/ADAPTER-GUIDE.md">Adapter guide</a>.</div>
+      <div class="card"><b>Score a vendor</b>Grade the tool your team is stuck in, with links. Two independent reviewers approve every score.</div>
+      <div class="card"><b>Ship native support</b>If you build a SaaS product, add a UDMP exporter or importer and earn the badge. Importers are how challengers win switchers.</div>
+      <div class="card"><b>Shape the spec</b>Normative changes go through UDMP Improvement Proposals with a reference implementation. <a href="https://github.com/adesokanayo/udmp/blob/main/GOVERNANCE.md">Governance</a>.</div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  UDMP 1.0.0-rc.1 · Specification CC BY 4.0 · Code Apache-2.0 · A neutral project, owned by no vendor ·
+  <a href="https://github.com/adesokanayo/udmp">github.com/adesokanayo/udmp</a>
+</footer>
+</body>
+</html>

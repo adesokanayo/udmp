@@ -1,0 +1,18 @@
+{
+  "name": "@udmp/adapter-twenty",
+  "version": "1.0.0-rc.1",
+  "description": "UDMP importer for Twenty CRM (REST + metadata API). Proves the M side of N+M.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": "./dist/index.js" },
+  "files": ["dist"],
+  "udmp": { "platform": "twenty", "udmp_version": "1.0.0", "role": "importer" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --import tsx test/*.test.ts"
+  },
+  "dependencies": { "@udmp/core": "workspace:*" }
+}

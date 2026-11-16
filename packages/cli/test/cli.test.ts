@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -114,4 +114,40 @@ test("validate: rejects a bundle whose manifest points outside itself", async ()
   assert.match(c.out.join("\n"), /ERROR \[schema\]/);
   assert.ok(!existsSync(join(dir, "data")));
   rmSync(dir, { recursive: true });
+});
+
+test("import: --plan prints mapped and unmapped fields, --apply loads into a mocked Twenty tenant idempotently", async () => {
+  const { fakeTwenty } = await import("../../adapter-twenty/test/fake-twenty.js");
+  const real = globalThis.fetch;
+  const t = fakeTwenty();
+  globalThis.fetch = t.fetch;
+  const dir = mkdtempSync(join(tmpdir(), "udmp-cli-import-"));
+  try {
+    const cfg = ["--config", "api_key=tw_test", "--config", "base_url=https://twenty.test"];
+    let c = capture();
+    assert.equal(await main(["import", sample, "--importer", "twenty", "--plan", "--plan-file", join(dir, "plan.json"), ...cfg], c.io), 0, c.err.join("\n"));
+    const text = c.out.join("\n");
+    assert.match(text, /account → companies\s+\[create, by semantic\]\s+crm\.account/);
+    assert.match(text, /owner → workspaceMembers\s+\[lookup/);
+    assert.match(text, /domain\s+string\s+→ domainName\.primaryLinkUrl/);
+    assert.match(text, /cf_tshirt_size\s+enum\s+✗ unmapped → custom_field/);
+    assert.match(text, /contract\s+attachment\s+✗ unmapped → json_note/);
+    assert.ok(existsSync(join(dir, "plan.json")));
+    assert.equal(t.store.companies.length, 0, "--plan writes nothing");
+
+    c = capture();
+    assert.equal(await main(["import", sample, "--importer", "twenty", "--apply", "--plan-file", join(dir, "plan.json"), "--id-map", join(dir, "ids.json"), "--quiet", ...cfg], c.io), 0, c.err.join("\n"));
+    assert.match(c.out[0], /17 created, 1 already present, 1 skipped/);
+    assert.equal(t.store.companies.length, 4);
+    const ids = JSON.parse(readFileSync(join(dir, "ids.json"), "utf8"));
+    assert.equal(Object.keys(ids.deal).length, 3);
+
+    c = capture();
+    assert.equal(await main(["import", sample, "--importer", "twenty", "--apply", "--quiet", ...cfg], c.io), 0);
+    assert.match(c.out[0], /0 created, 18 already present/);
+    assert.equal(t.store.companies.length, 4);
+  } finally {
+    globalThis.fetch = real;
+    rmSync(dir, { recursive: true });
+  }
 });
