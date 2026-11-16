@@ -1,0 +1,2 @@
+{"id":"9004","email":"ola@initech.example","firstname":"Ola","lastname":"Bakare","account_id":"503","lifecyclestage":"subscriber","cf_tshirt_size":"L","cf_interests":["newsletter"],"created_at":"2025-02-01T00:00:00Z"}
+{"id":"9005","email":"orphan@nowhere.example","firstname":"No","lastname":"Company","account_id":null,"lifecyclestage":"lead","cf_tshirt_size":null,"cf_interests":null,"created_at":"2026-01-01T00:00:00Z"}

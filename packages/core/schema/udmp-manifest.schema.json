@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://udmp.dev/schemas/1.0/udmp-manifest.schema.json",
+  "title": "UDMP Manifest",
+  "description": "Root descriptor of a Universal Data Migration Protocol bundle (UDMP 1.0).",
+  "type": "object",
+  "required": ["udmp_version", "bundle_id", "exported_at", "source", "export", "schema", "data_files", "conformance"],
+  "additionalProperties": false,
+  "properties": {
+    "udmp_version": { "type": "string", "pattern": "^1\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$" },
+    "bundle_id": { "type": "string", "format": "uuid" },
+    "exported_at": { "type": "string", "format": "date-time" },
+    "source": { "$ref": "#/$defs/source" },
+    "export": { "$ref": "#/$defs/export" },
+    "schema": { "$ref": "#/$defs/schema" },
+    "data_files": { "type": "array", "items": { "$ref": "#/$defs/dataFileGroup" } },
+    "blobs": { "type": "array", "items": { "$ref": "#/$defs/blobEntry" } },
+    "conformance": {
+      "type": "object",
+      "required": ["level"],
+      "additionalProperties": false,
+      "properties": {
+        "level": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "verified_by": { "type": "string" },
+        "verified_at": { "type": "string", "format": "date-time" }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "records": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "dropped": { "type": "integer", "minimum": 0 },
+        "blobs_ok": { "type": "integer", "minimum": 0 },
+        "blobs_skipped": { "type": "integer", "minimum": 0 },
+        "blobs_failed": { "type": "integer", "minimum": 0 },
+        "duration_seconds": { "type": "number", "minimum": 0 }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "propertyNames": { "pattern": "^(x-[a-z0-9-]+|[a-z0-9-]+(\\.[a-z0-9-]+)+)$" }
+    }
+  },
+  "$defs": {
+    "slug": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+    "fieldName": { "type": "string", "pattern": "^[a-z_][a-z0-9_]{0,127}$" },
+    "relPath": { "type": "string", "pattern": "^(?!/)(?!.*(^|/)\\.\\.(/|$)).+$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "semantic": { "type": "string", "pattern": "^(x-[a-z0-9-]+|[a-z]+)(\\.[a-z0-9_]+){1,3}$" },
+
+    "source": {
+      "type": "object",
+      "required": ["platform"],
+      "additionalProperties": true,
+      "properties": {
+        "platform": { "$ref": "#/$defs/slug" },
+        "platform_display_name": { "type": "string" },
+        "instance_id": { "type": "string" },
+        "instance_url": { "type": "string", "format": "uri" },
+        "region": { "type": "string" },
+        "adapter": {
+          "type": "object",
+          "required": ["name", "version"],
+          "properties": { "name": { "type": "string" }, "version": { "type": "string" } }
+        },
+        "api_versions": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+
+    "export": {
+      "type": "object",
+      "required": ["mode"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "enum": ["full", "incremental"] },
+        "since": { "type": ["string", "null"], "format": "date-time" },
+        "until": { "type": ["string", "null"], "format": "date-time" },
+        "parent_bundle_id": { "type": ["string", "null"], "format": "uuid" },
+        "objects_requested": { "type": "array", "items": { "$ref": "#/$defs/slug" } },
+        "objects_exported": { "type": "array", "items": { "$ref": "#/$defs/slug" } },
+        "cursor": { "type": "object", "additionalProperties": true }
+      },
+      "if": { "properties": { "mode": { "const": "incremental" } } },
+      "then": { "required": ["since", "parent_bundle_id"] }
+    },
+
+    "schema": {
+      "type": "object",
+      "required": ["objects"],
+      "additionalProperties": false,
+      "properties": {
+        "objects": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/object" } },
+        "relationships": { "type": "array", "items": { "$ref": "#/$defs/relationship" }, "default": [] }
+      }
+    },
+
+    "object": {
+      "type": "object",
+      "required": ["name", "primary_key", "fields"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/slug" },
+        "display_name": { "type": "string" },
+        "description": { "type": "string" },
+        "semantic": { "$ref": "#/$defs/semantic" },
+        "source_name": { "type": "string" },
+        "primary_key": {
+          "oneOf": [
+            { "$ref": "#/$defs/fieldName" },
+            { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/fieldName" } }
+          ]
+        },
+        "fields": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/field" } },
+        "ordering": { "type": "array", "items": { "$ref": "#/$defs/fieldName" } },
+        "soft_delete_field": { "$ref": "#/$defs/fieldName" },
+        "is_junction": { "type": "boolean" }
+      }
+    },
+
+    "scalarType": {
+      "enum": ["string", "integer", "decimal", "float", "boolean", "date", "datetime", "time", "duration",
+               "currency", "enum", "reference", "json", "richtext", "attachment", "geo"]
+    },
+
+    "field": {
+      "type": "object",
+      "required": ["name", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/fieldName" },
+        "display_name": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "anyOf": [ { "$ref": "#/$defs/scalarType" }, { "const": "array" } ] },
+        "nullable": { "type": "boolean", "default": true },
+        "is_custom": { "type": "boolean", "default": false },
+        "source_name": { "type": "string" },
+        "source_type": { "type": "string" },
+        "semantic": { "$ref": "#/$defs/semantic" },
+        "reference": {
+          "type": "object",
+          "required": ["object"],
+          "additionalProperties": false,
+          "properties": { "object": { "$ref": "#/$defs/slug" } }
+        },
+        "enum": {
+          "type": "object",
+          "required": ["values"],
+          "additionalProperties": false,
+          "properties": {
+            "values": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["value"],
+                "properties": { "value": { "type": "string" }, "label": { "type": "string" }, "order": { "type": "integer" } }
+              }
+            },
+            "open": { "type": "boolean", "default": true }
+          }
+        },
+        "items": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "$ref": "#/$defs/scalarType" },
+            "reference": { "type": "object", "required": ["object"], "properties": { "object": { "$ref": "#/$defs/slug" } } }
+          }
+        },
+        "unique": { "type": "boolean" },
+        "indexed": { "type": "boolean" }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "reference" } } }, "then": { "required": ["reference"] } },
+        { "if": { "properties": { "type": { "const": "enum" } } }, "then": { "required": ["enum"] } },
+        { "if": { "properties": { "type": { "const": "array" } } }, "then": { "required": ["items"] } }
+      ]
+    },
+
+    "endpoint": {
+      "type": "object",
+      "required": ["object", "field"],
+      "additionalProperties": false,
+      "properties": { "object": { "$ref": "#/$defs/slug" }, "field": { "$ref": "#/$defs/fieldName" } }
+    },
+
+    "relationship": {
+      "type": "object",
+      "required": ["name", "type", "from", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/slug" },
+        "type": { "enum": ["one_to_one", "one_to_many", "many_to_many"] },
+        "description": { "type": "string" },
+        "from": { "$ref": "#/$defs/endpoint" },
+        "to": { "$ref": "#/$defs/endpoint" },
+        "through": {
+          "type": "object",
+          "required": ["object", "from_field", "to_field"],
+          "additionalProperties": false,
+          "properties": {
+            "object": { "$ref": "#/$defs/slug" },
+            "from_field": { "$ref": "#/$defs/fieldName" },
+            "to_field": { "$ref": "#/$defs/fieldName" }
+          }
+        },
+        "on_delete": { "enum": ["set_null", "cascade", "restrict"], "default": "set_null" }
+      },
+      "if": { "properties": { "type": { "const": "many_to_many" } } },
+      "then": { "required": ["through"] }
+    },
+
+    "dataFile": {
+      "type": "object",
+      "required": ["path", "row_count"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "$ref": "#/$defs/relPath" },
+        "row_count": { "type": "integer", "minimum": 0 },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+
+    "dataFileGroup": {
+      "type": "object",
+      "required": ["object", "format", "files"],
+      "additionalProperties": false,
+      "properties": {
+        "object": { "$ref": "#/$defs/slug" },
+        "format": { "enum": ["ndjson"] },
+        "compression": { "enum": ["none", "gzip"], "default": "none" },
+        "files": { "type": "array", "items": { "$ref": "#/$defs/dataFile" } }
+      }
+    },
+
+    "blobEntry": {
+      "type": "object",
+      "required": ["id", "path", "bytes", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^sha256-[a-f0-9]{64}$" },
+        "path": { "$ref": "#/$defs/relPath" },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "media_type": { "type": "string" },
+        "filename": { "type": "string" }
+      }
+    }
+  }
+}

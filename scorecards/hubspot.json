@@ -1,0 +1,35 @@
+{
+  "platform": "hubspot",
+  "display_name": "HubSpot",
+  "plan": "Professional",
+  "scored_at": "2026-11-15",
+  "scored_by": "@adesokanayo",
+  "criteria": {
+    "api_access": {
+      "points": 15,
+      "evidence": ["https://developers.hubspot.com/docs/api/usage-details", "https://developers.hubspot.com/docs/api/private-apps"],
+      "notes": "Private-app read access on all tiers, but the default daily call limit and 100-records-per-page list endpoints make a 100k-record portal with associations a multi-hour export. Search endpoint capped at 10,000 results per query."
+    },
+    "schema_introspection": {
+      "points": 20,
+      "evidence": ["https://developers.hubspot.com/docs/api/crm/properties", "https://developers.hubspot.com/docs/api/crm/associations/v4"],
+      "notes": "Properties API returns every property with type, fieldType and enum options; associations v4 exposes labels per object pair."
+    },
+    "relational_integrity": {
+      "points": 15,
+      "evidence": ["https://developers.hubspot.com/docs/api/crm/associations/v4"],
+      "notes": "Associations are enumerable via batch read (100 ids per call), not as a single bulk list. Engagement-to-record links available the same way."
+    },
+    "export_throughput": {
+      "points": 10,
+      "evidence": ["https://developers.hubspot.com/docs/api/usage-details", "https://developers.hubspot.com/docs/api/crm/exports"],
+      "notes": "Async CRM Exports API exists but is CSV/XLSX only and flattens associations. API-based relational export of a mid-size portal lands in the 6–24 h band on standard rate limits."
+    },
+    "attachment_portability": {
+      "points": 15,
+      "evidence": ["https://developers.hubspot.com/docs/api/files/files"],
+      "notes": "Files API issues signed URLs that expire; rich text (notes, emails) is HTML."
+    }
+  },
+  "modifiers": { "data_act_procedure": false, "udmp_native_export": false, "udmp_native_import": false, "cancellation_grace_days": null }
+}

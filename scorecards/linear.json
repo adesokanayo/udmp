@@ -1,0 +1,35 @@
+{
+  "platform": "linear",
+  "display_name": "Linear",
+  "plan": "Standard",
+  "scored_at": "2026-11-15",
+  "scored_by": "@adesokanayo",
+  "criteria": {
+    "api_access": {
+      "points": 20,
+      "evidence": ["https://developers.linear.app/docs/graphql/working-with-the-graphql-api", "https://developers.linear.app/docs/graphql/working-with-the-graphql-api/rate-limiting"],
+      "notes": "Personal API keys on every plan; GraphQL covers every object. Complexity-based rate limit is generous for read-only pagination."
+    },
+    "schema_introspection": {
+      "points": 15,
+      "evidence": ["https://developers.linear.app/docs/graphql/working-with-the-graphql-api"],
+      "notes": "Full GraphQL introspection with types and enums. Relationships are implicit in the graph rather than declared as association metadata."
+    },
+    "relational_integrity": {
+      "points": 20,
+      "evidence": ["https://developers.linear.app/docs/graphql/working-with-the-graphql-api"],
+      "notes": "Every relation is a stable-id edge enumerable in bulk through connections; issueRelations exposes links as first-class records."
+    },
+    "export_throughput": {
+      "points": 15,
+      "evidence": ["https://developers.linear.app/docs/graphql/working-with-the-graphql-api/rate-limiting"],
+      "notes": "Cursor pagination at up to 250 nodes per page; a 100k-issue workspace exports in well under 6 h."
+    },
+    "attachment_portability": {
+      "points": 15,
+      "evidence": ["https://developers.linear.app/docs/graphql/working-with-the-graphql-api/attachments"],
+      "notes": "Uploads on uploads.linear.app download with the API key; most attachments are links to external systems. Descriptions and comments are Markdown."
+    }
+  },
+  "modifiers": { "data_act_procedure": false, "udmp_native_export": false, "udmp_native_import": false, "cancellation_grace_days": null }
+}
